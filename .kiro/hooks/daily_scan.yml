@@ -1,0 +1,35 @@
+name: Daily Repo Scanner
+description: Automatically scan GitHub for abandoned repositories daily
+version: 1.0.0
+
+trigger:
+  type: schedule
+  schedule: "0 0 * * *"  # Run at midnight every day
+
+action:
+  type: command
+  command: |
+    curl -X POST http://localhost:3001/api/repos/scan \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+      -d '{
+        "topics": ["javascript", "typescript", "python", "react", "nodejs"],
+        "forceRescan": false
+      }'
+
+config:
+  timeout: 300000  # 5 minutes
+  retries: 3
+  onError: log
+
+logging:
+  enabled: true
+  level: info
+  destination: logs/hooks/daily_scan.log
+
+notifications:
+  onSuccess:
+    message: "Daily repo scan completed successfully"
+  onError:
+    message: "Daily repo scan failed"
+    alertLevel: warning

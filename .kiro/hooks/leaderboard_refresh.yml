@@ -1,0 +1,31 @@
+name: Leaderboard Refresh
+description: Recalculate leaderboard rankings for all periods
+version: 1.0.0
+
+trigger:
+  type: schedule
+  schedule: "0 */6 * * *"  # Every 6 hours
+
+action:
+  type: command
+  command: |
+    curl -X POST http://localhost:3001/api/leaderboard/refresh \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer ${ADMIN_TOKEN}"
+
+config:
+  timeout: 120000  # 2 minutes
+  retries: 3
+  onError: retry
+
+logging:
+  enabled: true
+  level: info
+  destination: logs/hooks/leaderboard_refresh.log
+
+notifications:
+  onSuccess:
+    message: "Leaderboard refreshed successfully"
+  onError:
+    message: "Leaderboard refresh failed"
+    alertLevel: warning

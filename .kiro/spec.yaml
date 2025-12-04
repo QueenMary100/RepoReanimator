@@ -1,0 +1,579 @@
+name: RepoReanimator
+version: 1.0.0
+description: Revive dead GitHub projects with gamification and community collaboration
+hackathon: Kiroween 2024
+
+architecture:
+  type: microservices
+  frontend:
+    framework: Next.js 14
+    language: TypeScript
+    styling: TailwindCSS
+    animations: Framer Motion
+    state: Zustand
+    deployment: Vercel
+  backend:
+    framework: Express
+    language: TypeScript
+    orm: Prisma
+    deployment: Railway/Render
+  database:
+    primary: PostgreSQL
+    cache: Redis
+  auth:
+    provider: NextAuth.js
+    strategy: GitHub OAuth
+  mcp:
+    custom_tool: RepoGraveyardAnalyzer
+
+models:
+  User:
+    fields:
+      id: uuid (primary key)
+      githubId: string (unique)
+      username: string
+      email: string
+      avatarUrl: string
+      xp: integer (default: 0)
+      level: integer (default: 1)
+      currentStreak: integer (default: 0)
+      longestStreak: integer (default: 0)
+      lastContributionDate: datetime (nullable)
+      badges: json array
+      createdAt: datetime
+      updatedAt: datetime
+    relations:
+      revivals: Revival[]
+      contributions: ContributionRecord[]
+
+  GitHubRepo:
+    fields:
+      id: uuid (primary key)
+      githubId: integer (unique)
+      owner: string
+      name: string
+      fullName: string (owner/name)
+      description: string (nullable)
+      url: string
+      stars: integer
+      forks: integer
+      openIssues: integer
+      lastCommitDate: datetime
+      createdAt: datetime
+      language: string (nullable)
+      topics: string array
+      abandonmentScore: float (0-100)
+      healthScore: float (0-100)
+      isAbandoned: boolean (default: false)
+      analyzedAt: datetime (nullable)
+      scannedAt: datetime
+      updatedAt: datetime
+    relations:
+      revivals: Revival[]
+      tasks: RevivalTask[]
+    indexes:
+      - abandonmentScore
+      - topics
+      - isAbandoned
+
+  Revival:
+    fields:
+      id: uuid (primary key)
+      userId: uuid (foreign key)
+      repoId: uuid (foreign key)
+      status: enum (claimed, in_progress, completed, abandoned)
+      claimedAt: datetime
+      completedAt: datetime (nullable)
+      xpEarned: integer (default: 0)
+      createdAt: datetime
+      updatedAt: datetime
+    relations:
+      user: User
+      repo: GitHubRepo
+      contributions: ContributionRecord[]
+      tasks: RevivalTask[]
+
+  RevivalTask:
+    fields:
+      id: uuid (primary key)
+      revivalId: uuid (foreign key)
+      repoId: uuid (foreign key)
+      type: enum (fix_dependencies, add_tests, update_docs, fix_bugs, add_features)
+      title: string
+      description: text
+      difficulty: enum (easy, medium, hard)
+      xpReward: integer
+      status: enum (pending, in_progress, completed)
+      completedAt: datetime (nullable)
+      createdAt: datetime
+      updatedAt: datetime
+    relations:
+      revival: Revival
+      repo: GitHubRepo
+
+  ContributionRecord:
+    fields:
+      id: uuid (primary key)
+      userId: uuid (foreign key)
+      revivalId: uuid (foreign key)
+      type: enum (commit, pr, issue, review)
+      githubUrl: string
+      xpEarned: integer
+      description: string
+      createdAt: datetime
+    relations:
+      user: User
+      revival: Revival
+    indexes:
+      - userId
+      - createdAt
+
+  Leaderboard:
+    fields:
+      id: uuid (primary key)
+      userId: uuid (foreign key)
+      period: enum (daily, weekly, monthly, all_time)
+      rank: integer
+      xp: integer
+      revivals: integer
+      contributions: integer
+      calculatedAt: datetime
+    relations:
+      user: User
+    indexes:
+      - period, rank
+      - userId, period
+
+  Badge:
+    fields:
+      id: uuid (primary key)
+      code: string (unique)
+      name: string
+      description: text
+      icon: string
+      rarity: enum (common, rare, epic, legendary)
+      criteria: json
+      createdAt: datetime
+
+apis:
+  auth:
+    - POST /api/auth/github/callback
+    - GET /api/auth/session
+    - POST /api/auth/signout
+  
+  repos:
+    - GET /api/repos/discover
+      query: { topics?, language?, minStars?, page?, limit? }
+      response: { repos: GitHubRepo[], total: number, page: number }
+    
+    - GET /api/repos/:id
+      response: { repo: GitHubRepo, revival?: Revival, tasks: RevivalTask[] }
+    
+    - POST /api/repos/scan
+      body: { topics?: string[], forceRescan?: boolean }
+      response: { scanned: number, newRepos: number }
+    
+    - GET /api/repos/:id/health
+      response: { score: number, issues: string[], recommendations: string[] }
+  
+  revivals:
+    - POST /api/revivals/claim
+      body: { repoId: uuid }
+      response: { revival: Revival, tasks: RevivalTask[] }
+    
+    - GET /api/revivals/my
+      response: { revivals: Revival[] }
+    
+    - PATCH /api/revivals/:id
+      body: { status: string }
+      response: { revival: Revival }
+    
+    - POST /api/revivals/:id/tasks/:taskId/complete
+      response: { task: RevivalTask, xpEarned: number }
+  
+  contributions:
+    - POST /api/contributions
+      body: { revivalId: uuid, type: string, githubUrl: string, description: string }
+      response: { contribution: ContributionRecord, xpEarned: number, streakUpdated: boolean }
+    
+    - GET /api/contributions/my
+      query: { page?, limit? }
+      response: { contributions: ContributionRecord[], total: number }
+  
+  leaderboard:
+    - GET /api/leaderboard
+      query: { period: string, page?, limit? }
+      response: { entries: Leaderboard[], myRank?: number }
+  
+  users:
+    - GET /api/users/me
+      response: { user: User, stats: object }
+    
+    - GET /api/users/:id
+      response: { user: User, stats: object }
+    
+    - GET /api/users/me/badges
+      response: { badges: Badge[] }
+  
+  webhooks:
+    - POST /api/webhooks/github
+      body: GitHub webhook payload
+      response: { processed: boolean }
+  
+  mcp:
+    - POST /api/mcp/analyze
+      body: { repoUrl: string }
+      response: { health: object, recommendations: string[] }
+
+logic:
+  abandonmentScoring:
+    formula: |
+      score = 0
+      daysSinceLastCommit = (now - lastCommitDate) / 86400000
+      
+      # Time factor (0-40 points)
+      if daysSinceLastCommit > 730: score += 40
+      else if daysSinceLastCommit > 365: score += 30
+      else if daysSinceLastCommit > 180: score += 20
+      else if daysSinceLastCommit > 90: score += 10
+      
+      # Issue factor (0-20 points)
+      if openIssues > 50: score += 20
+      else if openIssues > 20: score += 15
+      else if openIssues > 10: score += 10
+      else if openIssues > 5: score += 5
+      
+      # Activity factor (0-20 points)
+      if stars > 100 && daysSinceLastCommit > 180: score += 20
+      else if stars > 50 && daysSinceLastCommit > 180: score += 15
+      
+      # README factor (0-10 points)
+      if hasIncompleteReadme: score += 10
+      
+      # Dependencies factor (0-10 points)
+      if hasOutdatedDeps: score += 10
+      
+      isAbandoned = score >= 50
+      return { score, isAbandoned }
+  
+  xpSystem:
+    baseXP:
+      commit: 10
+      pr_merged: 50
+      issue_closed: 20
+      review: 15
+      task_easy: 25
+      task_medium: 50
+      task_hard: 100
+    
+    multipliers:
+      streak_3days: 1.1
+      streak_7days: 1.25
+      streak_30days: 1.5
+      first_revival: 2.0
+      legendary_repo: 1.5
+    
+    levelFormula: |
+      level = floor(sqrt(xp / 100)) + 1
+  
+  streakSystem:
+    rules: |
+      - Contribution must be made within 24 hours of last contribution
+      - Streak breaks if no contribution for 48 hours
+      - Streak resets to 0 on break
+      - Longest streak is tracked separately
+    
+    calculation: |
+      if lastContributionDate:
+        hoursSince = (now - lastContributionDate) / 3600000
+        if hoursSince <= 24:
+          currentStreak += 1
+        else if hoursSince > 48:
+          currentStreak = 1
+      else:
+        currentStreak = 1
+      
+      if currentStreak > longestStreak:
+        longestStreak = currentStreak
+  
+  leaderboardRanking:
+    periods:
+      daily: last 24 hours
+      weekly: last 7 days
+      monthly: last 30 days
+      all_time: all time
+    
+    sortBy: xp DESC, contributions DESC, revivals DESC
+    
+    refresh: |
+      - Daily leaderboard: every hour
+      - Weekly leaderboard: every 6 hours
+      - Monthly leaderboard: every 12 hours
+      - All-time leaderboard: every 24 hours
+  
+  badgeSystem:
+    badges:
+      - code: first_revival
+        name: Necromancer
+        description: Revived your first dead repo
+        criteria: { revivals: 1 }
+        rarity: common
+      
+      - code: streak_7
+        name: Consistent Contributor
+        description: Maintained a 7-day streak
+        criteria: { currentStreak: 7 }
+        rarity: rare
+      
+      - code: streak_30
+        name: Dedication Demon
+        description: Maintained a 30-day streak
+        criteria: { currentStreak: 30 }
+        rarity: epic
+      
+      - code: xp_1000
+        name: Rising Star
+        description: Earned 1000 XP
+        criteria: { xp: 1000 }
+        rarity: rare
+      
+      - code: xp_10000
+        name: Legendary Reviver
+        description: Earned 10000 XP
+        criteria: { xp: 10000 }
+        rarity: legendary
+      
+      - code: revivals_10
+        name: Graveyard Keeper
+        description: Revived 10 repos
+        criteria: { revivals: 10 }
+        rarity: epic
+
+mcp:
+  tool: RepoGraveyardAnalyzer
+  description: Analyzes GitHub repositories to detect abandonment and provide revival recommendations
+  
+  capabilities:
+    - Analyze README for incomplete sections
+    - Detect outdated dependencies
+    - Identify broken code patterns
+    - Calculate repo health score
+    - Generate revival task recommendations
+  
+  inputSchema:
+    repoUrl: string (required)
+    depth: enum (quick, standard, deep) (default: standard)
+  
+  outputSchema:
+    healthScore: float (0-100)
+    abandonmentScore: float (0-100)
+    issues:
+      - category: string
+        severity: enum (low, medium, high, critical)
+        description: string
+        location: string (optional)
+    
+    recommendations:
+      - type: enum (fix_dependencies, add_tests, update_docs, fix_bugs, add_features)
+        priority: enum (low, medium, high)
+        title: string
+        description: string
+        estimatedEffort: enum (easy, medium, hard)
+        xpReward: integer
+    
+    metadata:
+      analyzedAt: datetime
+      analysisDepth: string
+      filesAnalyzed: integer
+
+frontend:
+  theme:
+    name: Spooky Dark Mode
+    colors:
+      primary: "#8B5CF6" # Purple
+      secondary: "#EC4899" # Pink
+      accent: "#10B981" # Green
+      background: "#0F172A" # Dark blue
+      surface: "#1E293B"
+      text: "#F1F5F9"
+      textMuted: "#94A3B8"
+      danger: "#EF4444"
+      warning: "#F59E0B"
+      success: "#10B981"
+    
+    effects:
+      glow: "0 0 20px rgba(139, 92, 246, 0.5)"
+      shadowLg: "0 10px 40px rgba(0, 0, 0, 0.5)"
+      gradientPurple: "linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)"
+  
+  pages:
+    - path: /
+      name: Landing
+      description: Hero section with CTA, features, stats
+    
+    - path: /dashboard
+      name: Dashboard
+      description: User stats, recent activity, quick actions
+      components:
+        - StatsCards (XP, Level, Streak, Revivals)
+        - RecentContributions
+        - ActiveRevivals
+        - ProgressChart
+    
+    - path: /discover
+      name: Repo Explorer
+      description: Browse and filter abandoned repos
+      components:
+        - SearchBar
+        - TopicFilter
+        - LanguageFilter
+        - RepoGrid
+        - RepoCard
+    
+    - path: /repos/:id
+      name: Repo Details
+      description: Detailed repo view with revival options
+      components:
+        - RepoHeader
+        - HealthScore
+        - AbandonmentMetrics
+        - RevivalTasks
+        - ClaimButton
+    
+    - path: /profile/:id
+      name: User Profile
+      description: User stats, badges, contribution history
+      components:
+        - ProfileHeader
+        - BadgeCollection
+        - StatsOverview
+        - ContributionGraph
+        - RevivalHistory
+    
+    - path: /leaderboard
+      name: Leaderboard
+      description: Rankings by period
+      components:
+        - PeriodTabs
+        - LeaderboardTable
+        - MyRankCard
+  
+  components:
+    layout:
+      - Navbar
+      - Sidebar
+      - Footer
+      - Layout
+    
+    shared:
+      - Button
+      - Card
+      - Badge
+      - Avatar
+      - Input
+      - Select
+      - Modal
+      - Toast
+      - LoadingSpinner
+      - ErrorBoundary
+      - ProgressBar
+    
+    animations:
+      - GlowEffect
+      - FloatingGhost
+      - PulseAnimation
+      - SlideIn
+      - FadeIn
+      - CountUp
+
+testing:
+  unit:
+    backend:
+      - models/User.test.ts
+      - services/AbandonmentScorer.test.ts
+      - services/XPCalculator.test.ts
+      - services/StreakManager.test.ts
+      - services/LeaderboardService.test.ts
+      - utils/github.test.ts
+    
+    frontend:
+      - components/RepoCard.test.tsx
+      - components/StatsCard.test.tsx
+      - hooks/useAuth.test.ts
+      - utils/formatters.test.ts
+  
+  integration:
+    - api/repos.integration.test.ts
+    - api/revivals.integration.test.ts
+    - api/contributions.integration.test.ts
+    - api/leaderboard.integration.test.ts
+    - webhooks/github.integration.test.ts
+  
+  e2e:
+    - flows/signup-and-claim.spec.ts
+    - flows/complete-revival.spec.ts
+    - flows/leaderboard-ranking.spec.ts
+  
+  mcp:
+    - mcp/analyzer.test.ts
+    - mcp/integration.test.ts
+
+deployment:
+  frontend:
+    platform: Vercel
+    env:
+      - NEXT_PUBLIC_API_URL
+      - NEXT_PUBLIC_GITHUB_CLIENT_ID
+      - NEXTAUTH_URL
+      - NEXTAUTH_SECRET
+  
+  backend:
+    platform: Railway/Render
+    env:
+      - DATABASE_URL
+      - REDIS_URL
+      - GITHUB_CLIENT_ID
+      - GITHUB_CLIENT_SECRET
+      - JWT_SECRET
+      - WEBHOOK_SECRET
+  
+  database:
+    platform: Supabase
+    migrations: Prisma
+  
+  ci_cd:
+    platform: GitHub Actions
+    workflows:
+      - test
+      - build
+      - deploy
+
+mvp_scope:
+  phase1:
+    - GitHub OAuth authentication
+    - Repo discovery with basic filtering
+    - Abandonment scoring
+    - Claim revival functionality
+    - Basic XP system
+    - Simple dashboard
+  
+  phase2:
+    - Contribution tracking
+    - Streak system
+    - Leaderboard
+    - Badge system
+    - Enhanced UI with animations
+  
+  phase3:
+    - MCP tool integration
+    - GitHub webhooks
+    - Advanced analytics
+    - Notification system
+
+extended_scope:
+  - Team revivals
+  - Mentorship system
+  - AI-powered task generation
+  - Social features (comments, likes)
+  - Mobile app
+  - Browser extension

@@ -1,0 +1,44 @@
+name: Award Points on Contribution
+description: Listen for GitHub webhook events and award XP for contributions
+version: 1.0.0
+
+trigger:
+  type: webhook
+  path: /api/webhooks/github
+  events:
+    - push
+    - pull_request
+    - issues
+    - pull_request_review
+
+action:
+  type: agent_message
+  message: |
+    Process the GitHub webhook event and award XP:
+    1. Identify the user from the GitHub event
+    2. Match to our user database via githubId
+    3. Calculate XP based on contribution type
+    4. Update user XP and check for streak
+    5. Check if any badges should be awarded
+    6. Create contribution record
+
+config:
+  timeout: 30000
+  retries: 2
+  onError: log
+
+validation:
+  requireSignature: true
+  secretEnv: GITHUB_WEBHOOK_SECRET
+
+logging:
+  enabled: true
+  level: info
+  destination: logs/hooks/award_points.log
+
+notifications:
+  onSuccess:
+    message: "XP awarded for contribution"
+  onError:
+    message: "Failed to award XP"
+    alertLevel: error

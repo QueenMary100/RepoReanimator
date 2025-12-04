@@ -1,0 +1,31 @@
+name: Streak Checker
+description: Check and break streaks for inactive users daily
+version: 1.0.0
+
+trigger:
+  type: schedule
+  schedule: "0 1 * * *"  # Run at 1 AM every day
+
+action:
+  type: command
+  command: |
+    curl -X POST http://localhost:3001/api/users/check-streaks \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer ${ADMIN_TOKEN}"
+
+config:
+  timeout: 60000  # 1 minute
+  retries: 3
+  onError: log
+
+logging:
+  enabled: true
+  level: info
+  destination: logs/hooks/streak_checker.log
+
+notifications:
+  onSuccess:
+    message: "Streak check completed"
+  onError:
+    message: "Streak check failed"
+    alertLevel: warning

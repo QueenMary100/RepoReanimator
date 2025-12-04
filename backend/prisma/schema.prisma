@@ -1,0 +1,196 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String              @id @default(uuid())
+  githubId             String              @unique
+  username             String
+  email                String
+  avatarUrl            String
+  xp                   Int                 @default(0)
+  level                Int                 @default(1)
+  currentStreak        Int                 @default(0)
+  longestStreak        Int                 @default(0)
+  lastContributionDate DateTime?
+  badges               Json                @default("[]")
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  
+  revivals             Revival[]
+  contributions        ContributionRecord[]
+  leaderboardEntries   Leaderboard[]
+
+  @@index([githubId])
+  @@index([xp])
+}
+
+model GitHubRepo {
+  id                String        @id @default(uuid())
+  githubId          Int           @unique
+  owner             String
+  name              String
+  fullName          String
+  description       String?
+  url               String
+  stars             Int
+  forks             Int
+  openIssues        Int
+  lastCommitDate    DateTime
+  createdAt         DateTime
+  language          String?
+  topics            String[]
+  abandonmentScore  Float         @default(0)
+  healthScore       Float         @default(100)
+  isAbandoned       Boolean       @default(false)
+  analyzedAt        DateTime?
+  scannedAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  
+  revivals          Revival[]
+  tasks             RevivalTask[]
+
+  @@index([abandonmentScore])
+  @@index([isAbandoned])
+  @@index([topics])
+  @@index([language])
+}
+
+enum RevivalStatus {
+  claimed
+  in_progress
+  completed
+  abandoned
+}
+
+model Revival {
+  id            String              @id @default(uuid())
+  userId        String
+  repoId        String
+  status        RevivalStatus       @default(claimed)
+  claimedAt     DateTime            @default(now())
+  completedAt   DateTime?
+  xpEarned      Int                 @default(0)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repo          GitHubRepo          @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  contributions ContributionRecord[]
+  tasks         RevivalTask[]
+
+  @@index([userId])
+  @@index([repoId])
+  @@index([status])
+}
+
+enum TaskType {
+  fix_dependencies
+  add_tests
+  update_docs
+  fix_bugs
+  add_features
+}
+
+enum TaskDifficulty {
+  easy
+  medium
+  hard
+}
+
+enum TaskStatus {
+  pending
+  in_progress
+  completed
+}
+
+model RevivalTask {
+  id          String         @id @default(uuid())
+  revivalId   String
+  repoId      String
+  type        TaskType
+  title       String
+  description String
+  difficulty  TaskDifficulty
+  xpReward    Int
+  status      TaskStatus     @default(pending)
+  completedAt DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  
+  revival     Revival        @relation(fields: [revivalId], references: [id], onDelete: Cascade)
+  repo        GitHubRepo     @relation(fields: [repoId], references: [id], onDelete: Cascade)
+
+  @@index([revivalId])
+  @@index([status])
+}
+
+enum ContributionType {
+  commit
+  pr
+  issue
+  review
+}
+
+model ContributionRecord {
+  id          String           @id @default(uuid())
+  userId      String
+  revivalId   String
+  type        ContributionType
+  githubUrl   String
+  xpEarned    Int
+  description String
+  createdAt   DateTime         @default(now())
+  
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  revival     Revival          @relation(fields: [revivalId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+enum LeaderboardPeriod {
+  daily
+  weekly
+  monthly
+  all_time
+}
+
+model Leaderboard {
+  id            String            @id @default(uuid())
+  userId        String
+  period        LeaderboardPeriod
+  rank          Int
+  xp            Int
+  revivals      Int
+  contributions Int
+  calculatedAt  DateTime          @default(now())
+  
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, period])
+  @@index([period, rank])
+}
+
+enum BadgeRarity {
+  common
+  rare
+  epic
+  legendary
+}
+
+model Badge {
+  id          String      @id @default(uuid())
+  code        String      @unique
+  name        String
+  description String
+  icon        String
+  rarity      BadgeRarity
+  criteria    Json
+  createdAt   DateTime    @default(now())
+}
