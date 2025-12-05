@@ -1,212 +1,245 @@
-# 🎃 RepoReanimator
+🎃 RepoReanimator
 
-> Revive dead GitHub projects and earn XP while learning!
+Revive abandoned GitHub projects. Learn. Earn XP. Become a legend.
 
-[![Kiroween Hackathon](https://img.shields.io/badge/Kiroween-2024-purple)](https://kiroween.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+<p align="center"> <img src="https://via.placeholder.com/900x350?text=RepoReanimator+Banner" alt="RepoReanimator Banner"/> </p> <p align="center"> <a href="#"><img src="https://img.shields.io/badge/Kiroween-2024-purple"></a> <a href="#"><img src="https://img.shields.io/badge/TypeScript-5.0-blue"></a> <a href="#"><img src="https://img.shields.io/badge/license-MIT-green"></a> </p>
+🌟 What is RepoReanimator?
 
-## 🌟 What is RepoReanimator?
+RepoReanimator is a gamified platform that helps developers discover abandoned GitHub repositories, revive them, and earn XP, badges, streaks, and leaderboard positions — all while learning and contributing to meaningful open-source work.
 
-RepoReanimator is a gamified platform that helps developers discover abandoned GitHub projects, contribute to reviving them, and earn XP, badges, and climb leaderboards while learning new skills.
+<p align="center"> <img src="https://via.placeholder.com/900x300?text=Discover+Abandoned+Repos" alt="Discover Repos"/> </p>
+🧟‍♂️ Why RepoReanimator?
+🚨 The Problem
 
-### The Problem
-Thousands of promising GitHub projects are abandoned every year, leaving valuable code and ideas to rot. Meanwhile, developers struggle to find meaningful open-source projects to contribute to.
+Every year, thousands of GitHub projects are abandoned — valuable code goes to waste, and developers struggle to find meaningful OSS contributions.
 
-### The Solution
-RepoReanimator bridges this gap by:
-- 🔍 **Discovering** abandoned repos using intelligent scoring
-- 🎯 **Matching** developers with projects that need revival
-- 🎮 **Gamifying** contributions with XP, streaks, and badges
-- 📊 **Tracking** progress and celebrating achievements
-- 🤝 **Building** a community of open-source contributors
+🩺 The Solution
 
-## ✨ Features
+RepoReanimator fixes this by:
 
-### Core Features
-- **Smart Repo Discovery**: Find abandoned projects by topic, language, and popularity
-- **Abandonment Scoring**: AI-powered analysis of repo health and abandonment status
-- **Revival System**: Claim repos and track your revival progress
-- **Task Generation**: Automated task suggestions for reviving projects
-- **XP & Leveling**: Earn experience points and level up
-- **Streak Tracking**: Maintain contribution streaks for bonus XP
-- **Leaderboards**: Compete globally or within specific time periods
-- **Badge Collection**: Unlock achievements and showcase your skills
-- **GitHub Integration**: Seamless OAuth and webhook integration
+🔍 Finding abandoned repos using an intelligent abandonment score
 
-### Powered by Kiro
-- **Custom MCP Tool**: RepoGraveyardAnalyzer for deep repo analysis
-- **Agent Hooks**: Automated scanning, XP awarding, and leaderboard updates
-- **Steering Rules**: Consistent code quality and architecture
+🎯 Matching developers to repos they can revive
 
-## 🏗️ Architecture
+🎮 Turning the contributions into a gamified experience
 
-```
+🏆 Rewarding effort through XP, badges & leaderboards
+
+🤝 Building an active revival community
+
+✨ Features
+<p align="center"> <img src="https://via.placeholder.com/900x300?text=Gamified+Dashboard" alt="Dashboard"/> </p>
+<img width="1348" height="677" alt="image" src="https://github.com/user-attachments/assets/db2d577b-e290-47e2-b87d-9f9052ad0042" />
+<img width="1319" height="669" alt="image" src="https://github.com/user-attachments/assets/3e1688a5-107b-4db2-84cf-a50c4908d633" />
+
+
+🔥 Core Features
+
+Smart Repo Discovery (topic, language & activity filters)
+
+AI-based Abandonment Scoring
+
+Revival Workflow: claim → fix → submit PRs
+
+Task Generator: auto-suggests fixes
+
+XP + Leveling System
+
+Daily/Weekly Streak Tracking
+
+Global & Weekly Leaderboards
+
+Badge Collection System
+
+GitHub OAuth + Webhooks
+
+🏗️ Architecture Overview
 RepoReanimator/
 ├── frontend/          # Next.js 14 + TypeScript
 ├── backend/           # Express + TypeScript + Prisma
-├── mcp/              # Custom MCP tool
-├── .kiro/            # Kiro configuration
-│   ├── spec.yaml     # Complete specification
-│   ├── steering/     # Development guidelines
-│   └── hooks/        # Agent automation
-└── docker/           # Deployment configs
-```
+├── mcp/               # Custom MCP tool
+├── .kiro/             # Kiro config, hooks & steering
+└── docker/            # Deployment configs
 
-### Tech Stack
-- **Frontend**: Next.js 14, TypeScript, TailwindCSS, Framer Motion, Zustand
-- **Backend**: Node.js, Express, Prisma ORM
-- **Database**: PostgreSQL + Redis
-- **Auth**: NextAuth.js with GitHub OAuth
-- **Deployment**: Vercel (frontend) + Railway (backend) + Supabase (database)
+<p align="center"> <img src="https://via.placeholder.com/900x350?text=System+Architecture" alt="Architecture Diagram"/> </p>
+🛠 Tech Stack
 
-## 🚀 Quick Start
+Frontend: Next.js 14, TS, Tailwind, Framer Motion, Zustand
 
-### Live Demo
-- **Frontend**: https://reporeanimator.lovable.app
-- **Backend**: Deploy following the [Integration Guide](INTEGRATION_GUIDE.md)
+Backend: Node.js, Express, Prisma
 
-### Prerequisites
-- Node.js 18+
-- PostgreSQL 14+
-- Redis (optional, for caching)
-- GitHub OAuth App credentials
+Database: PostgreSQL + Redis (cache)
 
-### Backend Setup
+Auth: GitHub OAuth via NextAuth.js
 
-1. Clone the repository
-```bash
+Deployment: Vercel (FE), Railway (BE), Supabase (DB)
+
+🚀 Quick Start
+🔗 Live Demo
+
+Frontend → https://repo-reanimator.vercel.app/
+
+Backend → Deploy using the Integration Guide
+
+🧩 Backend Setup
+1️⃣ Clone the repo
 git clone https://github.com/yourusername/reporeanimator.git
 cd reporeanimator/backend
-```
 
-2. Install dependencies
-```bash
+2️⃣ Install dependencies
 npm install
-```
 
-3. Set up environment variables
-```bash
+3️⃣ Configure environment
 cp .env.example .env
-# Edit .env with your credentials
-```
 
-Required environment variables:
-```bash
+
+Then update with:
+
 DATABASE_URL=postgresql://user:password@localhost:5432/reporeanimator
 REDIS_URL=redis://localhost:6379
 GITHUB_CLIENT_ID=your_github_client_id
 GITHUB_CLIENT_SECRET=your_github_client_secret
-GITHUB_TOKEN=your_github_personal_access_token
-JWT_SECRET=your_jwt_secret_32_chars_minimum
-FRONTEND_URL=https://reporeanimator.lovable.app
+GITHUB_TOKEN=your_pat
+JWT_SECRET=your_jwt_secret
+FRONTEND_URL=https://repo-reanimator.vercel.app/
 PORT=3001
-```
 
-4. Run database migrations
-```bash
+4️⃣ Run migrations
 npx prisma migrate dev
 npx prisma db seed
-```
 
-5. Start backend server
-```bash
+5️⃣ Start server
 npm run dev
-```
 
-### Connecting to Your Frontend
+🔗 Frontend Integration
 
-Your frontend is already deployed at https://reporeanimator.lovable.app
+You already have the frontend deployed. Follow the Integration Guide to:
 
-Follow the [Integration Guide](INTEGRATION_GUIDE.md) to:
-1. Deploy the backend to Railway or Render
-2. Update frontend environment variables
-3. Connect the API client
-4. Test the integration
+Deploy backend to Railway
 
-Visit the Integration Guide for detailed step-by-step instructions!
+Add backend URL to frontend env
 
-## 📖 Documentation
+Test full integration
 
-- [API Documentation](docs/API.md)
-- [MCP Tool Guide](docs/MCP.md)
-- [Deployment Guide](docs/DEPLOYMENT.md)
-- [Contributing Guide](CONTRIBUTING.md)
+📖 Documentation
 
-## 🎮 How It Works
+📘 API Docs
 
-1. **Sign in with GitHub** - Authenticate using your GitHub account
-2. **Discover Dead Repos** - Browse abandoned projects by topic
-3. **Claim a Revival** - Choose a project to revive
-4. **Complete Tasks** - Fix issues, update docs, modernize code
-5. **Earn XP & Badges** - Level up and unlock achievements
-6. **Climb the Leaderboard** - Compete with other developers
+🤖 MCP Tool Guide
 
-## 🏆 Gamification System
+🚀 Deployment Guide
 
-### XP System
-- Commits: 10 XP
-- Merged PRs: 50 XP
-- Closed Issues: 20 XP
-- Code Reviews: 15 XP
-- Completed Tasks: 25-100 XP (based on difficulty)
+🛠 Contributing Guide
 
-### Streak Multipliers
-- 3-day streak: 1.1x XP
-- 7-day streak: 1.25x XP
-- 30-day streak: 1.5x XP
+🎮 How It Works
 
-### Badges
-- 🧙 **Necromancer**: Revived your first repo
-- 🔥 **Consistent Contributor**: 7-day streak
-- 👹 **Dedication Demon**: 30-day streak
-- ⭐ **Rising Star**: 1000 XP earned
-- 👑 **Legendary Reviver**: 10000 XP earned
+Sign in with GitHub
 
-## 🤖 Kiro Integration
+Discover abandoned repos
 
-### Custom MCP Tool: RepoGraveyardAnalyzer
-Analyzes repositories to detect:
-- Incomplete README sections
-- Outdated dependencies
-- Broken code patterns
-- Health score calculation
-- Revival task recommendations
+Claim one to revive
 
-### Agent Hooks
-- **daily_scan**: Automatically scan GitHub for abandoned repos
-- **award_points**: Listen for contributions and assign XP
-- **leaderboard_refresh**: Recalculate rankings daily
-- **streak_checker**: Maintain contribution streaks
+Fix issues, write docs, update code
 
-## 📊 Project Stats
+Earn XP + unlock badges
 
-- **Lines of Code**: ~15,000+
-- **API Endpoints**: 20+
-- **Database Models**: 7
-- **Frontend Components**: 30+
-- **Test Coverage**: 80%+
+Climb the leaderboard
 
-## 🤝 Contributing
+<p align="center"> <img src="https://via.placeholder.com/900x300?text=XP+and+Achievements" alt="XP System"/> </p>
+🏆 Gamification Breakdown
+⭐ XP Rewards
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+Commits → 10 XP
 
-## 📝 License
+Merged PR → 50 XP
 
-MIT License - see [LICENSE](LICENSE) for details
+Closed Issue → 20 XP
 
-## 🙏 Acknowledgments
+Code Review → 15 XP
 
-- Built for the Kiroween Hackathon 2024
-- Powered by Kiro AI
-- Inspired by the open-source community
+Tasks → 25–100 XP
 
-## 📧 Contact
+🔥 Streak Multipliers
 
-- GitHub: [@yourusername](https://github.com/yourusername)
-- Twitter: [@yourhandle](https://twitter.com/yourhandle)
-- Email: your.email@example.com
+3 days → 1.1×
 
----
+7 days → 1.25×
 
-Made with 💜 and ☕ for Kiroween 2024
+30 days → 1.5×
+
+🏅 Badges
+
+🧙 Necromancer – First revive
+
+🔥 Consistent Contributor – 7-day streak
+
+👹 Dedication Demon – 30-day streak
+
+⭐ Rising Star – 1,000 XP
+
+👑 Legendary Reviver – 10,000 XP
+
+🤖 Kiro Integration
+🧰 Custom MCP Tool: RepoGraveyardAnalyzer
+
+Scans repos to detect:
+
+Outdated dependencies
+
+Broken code patterns
+
+Unmaintained sections
+
+Missing docs
+
+Revival-ready tasks
+
+🔄 Automated Hooks
+
+daily_scan – find abandoned repos
+
+award_points – give XP on contributions
+
+leaderboard_refresh – recalc ranks
+
+streak_checker – maintain streaks
+
+📊 Project Stats
+
+Lines of Code: 15k+
+
+API Endpoints: 20+
+
+DB Models: 7
+
+Components: 30+
+
+Test Coverage: 80%
+
+🤝 Contributing
+
+PRs are welcome!
+Check out the Contributing Guide
+.
+
+📝 License
+
+MIT — see LICENSE
+.
+
+🙏 Acknowledgments
+
+Built for Kiroween Hackathon 2024
+
+Powered by Kiro AI
+
+Inspired by the OSS community
+
+📧 Contact
+
+GitHub: @QueenMary100
+
+Twitter: @MarySyokau66549
+
+Email: qmary1085@gmail.com
+<p align="center">Made with 💜 + ☕ for Kiroween 2024</p>
